@@ -37,6 +37,16 @@
                 <label class="form-label">Commune</label>
                 <input type="text" class="form-input" id="filter-commune" name="commune" placeholder="Rechercher une commune...">
             </div>
+
+            <div class="form-group" id="rayon-container" style="display: none;">
+                <label class="form-label">Rayon de recherche</label>
+                <input type="range" id="filter-rayon" min="5" max="100" value="20" step="5" class="form-range" style="width: 100%;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.875rem; color: var(--text-muted); margin-top: 0.5rem;">
+                    <span>5km</span>
+                    <span id="rayon-value" style="font-weight: 600; color: var(--primary);">20km</span>
+                    <span>100km</span>
+                </div>
+            </div>
             
             <button type="submit" class="btn btn-primary btn-block">Appliquer les filtres</button>
             <button type="button" class="btn btn-outline btn-block mt-2" onclick="switchToList()">Basculer vers la liste</button>
@@ -132,7 +142,7 @@ async function loadEquipements() {
     try {
 
         const limit = 100;
-        const totalToFetch = 500;
+        const totalToFetch = 1000;
         let allEquipements = [];
         let offset = 0;
         
@@ -150,12 +160,31 @@ async function loadEquipements() {
             if (allEquipements.length >= data.total_count) break;
         }
 
-        const finalCountResponse = await fetch(`${API_URL}?limit=0${whereClause}`);
-        const finalCountData = await finalCountResponse.json();
-        document.getElementById('total-count').textContent = formatNumber(finalCountData.total_count || 0);
+        const rayon = parseInt(document.getElementById('filter-rayon').value);
+        let filteredEquipements = allEquipements;
 
-        displayMarkers(allEquipements);
-        displayEquipementsList(allEquipements);
+        if (communeCoords) {
+            filteredEquipements = allEquipements.filter(equip => {
+                if (!equip.equip_coordonnees) return false;
+                const lat = equip.equip_coordonnees.lat;
+                const lon = equip.equip_coordonnees.lon;
+                if (!lat || !lon) return false;
+                
+                const distance = calculateDistance(
+                    communeCoords.lat, 
+                    communeCoords.lon, 
+                    lat, 
+                    lon
+                );
+                
+                return distance <= rayon;
+            });
+        }
+
+        document.getElementById('total-count').textContent = formatNumber(filteredEquipements.length);
+
+        displayMarkers(filteredEquipements);
+        displayEquipementsList(filteredEquipements);
         
     } catch (error) {
         console.error('Erreur lors du chargement des équipements:', error);
@@ -164,20 +193,15 @@ async function loadEquipements() {
 }
 
 function displayMarkers(equipements) {
-    // Supprimer les anciens marqueurs
     markers.forEach(marker => map.removeLayer(marker));
     markers = [];
     
-    // Ajouter les nouveaux marqueurs
     equipements.forEach(equip => {
         if (equip.equip_coordonnees) {
             const lat = equip.equip_coordonnees.lat;
             const lon = equip.equip_coordonnees.lon;
             
             if (lat && lon) {
-                // Couleur selon le statut (simulé pour l'instant)
-                const color = '#22c55e'; // Vert par défaut (en service)
-                
                 const redIcon = L.icon({
                     iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
                     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
@@ -186,13 +210,9 @@ function displayMarkers(equipements) {
                     popupAnchor: [1, -34],
                     shadowSize: [41, 41]
                 });
-
-                // Remplace ton code par :
-                const marker = L.marker([lat, lon], {
-                    icon: redIcon
-                });
                 
-                // Popup avec les infos
+                const marker = L.marker([lat, lon], { icon: redIcon });
+                
                 marker.bindPopup(`
                     <strong>${equip.equip_nom || 'Sans nom'}</strong><br>
                     <em>${equip.equip_type_name || 'Type inconnu'}</em><br>
@@ -205,6 +225,10 @@ function displayMarkers(equipements) {
             }
         }
     });
+    
+    if (communeCoords && markers.length > 0) {
+        map.setView([communeCoords.lat, communeCoords.lon], 11);
+    }
 }
 
 function displayEquipementsList(equipements) {
@@ -234,6 +258,66 @@ function displayEquipementsList(equipements) {
 
 function switchToList() {
     window.location.href = '/equipements_sportifs/public/equipements';
+}
+
+let communeCoords = null;
+
+document.getElementById('filter-rayon').addEventListener('input', function() {
+    document.getElementById('rayon-value').textContent = this.value + ' km';
+});
+
+document.getElementById('filter-rayon').addEventListener('change', function() {
+    loadEquipements();
+});
+
+let geocodeTimer = null;
+
+document.getElementById('filter-commune').addEventListener('input', async function() {
+    const commune = this.value.trim();
+    const rayonContainer = document.getElementById('rayon-container');
+    
+    clearTimeout(geocodeTimer);
+    
+    if (commune.length >= 3) {
+        geocodeTimer = setTimeout(async () => {
+            try {
+                const response = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(commune)}&type=municipality&limit=1`);
+                const data = await response.json();
+                
+                if (data.features && data.features.length > 0) {
+                    communeCoords = {
+                        lat: data.features[0].geometry.coordinates[1],
+                        lon: data.features[0].geometry.coordinates[0]
+                    };
+                    rayonContainer.style.display = 'block';
+                    
+                    loadEquipements();
+                } else {
+                    communeCoords = null;
+                    rayonContainer.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Erreur géocodage:', error);
+                communeCoords = null;
+                rayonContainer.style.display = 'none';
+            }
+        }, 500);
+    } else {
+        communeCoords = null;
+        rayonContainer.style.display = 'none';
+        loadEquipements();
+    }
+});
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
 }
 
 function escapeHtml(text) {
