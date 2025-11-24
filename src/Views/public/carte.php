@@ -118,7 +118,7 @@ async function loadEquipements() {
     const statut = document.getElementById('filter-statut').value;
     
     // Construire l'URL avec les filtres
-    let url = `${API_URL}?limit=100`;
+    let url = `${API_URL}?limit=100 `;
     
     let whereConditions = [];
     if (type) {
@@ -165,13 +165,18 @@ function displayMarkers(equipements) {
                 // Couleur selon le statut (simulé pour l'instant)
                 const color = '#22c55e'; // Vert par défaut (en service)
                 
-                const marker = L.circleMarker([lat, lon], {
-                    radius: 8,
-                    fillColor: color,
-                    color: '#fff',
-                    weight: 2,
-                    opacity: 1,
-                    fillOpacity: 0.8
+                const redIcon = L.icon({
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41],
+                    popupAnchor: [1, -34],
+                    shadowSize: [41, 41]
+                });
+
+                // Remplace ton code par :
+                const marker = L.marker([lat, lon], {
+                    icon: redIcon
                 });
                 
                 // Popup avec les infos
