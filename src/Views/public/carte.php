@@ -32,6 +32,11 @@
                     <option value="ferme">Fermé</option>
                 </select>
             </div>
+
+            <div class="form-group">
+                <label class="form-label">Dimension maximale (m²)</label>
+                <input type="number" class="form-input" id="filter-dimension" name="dimension" placeholder="Ex : 500">
+            </div>
             
             <div class="form-group">
                 <label class="form-label">Commune</label>
@@ -126,6 +131,7 @@ async function loadEquipements() {
     const type = document.getElementById('filter-type').value;
     const commune = document.getElementById('filter-commune').value;
     const statut = document.getElementById('filter-statut').value;
+    const dimensionMax = document.getElementById('filter-dimension').value;
     
     let whereConditions = [];
     if (type) {
@@ -157,6 +163,10 @@ async function loadEquipements() {
             allEquipements = allEquipements.concat(data.results);
             offset += limit;
 
+            if (allEquipements.length === 100) {
+                console.log('Exemple d\'équipement:', allEquipements[2]);
+            }
+
             if (allEquipements.length >= data.total_count) break;
         }
 
@@ -178,6 +188,16 @@ async function loadEquipements() {
                 );
                 
                 return distance <= rayon;
+            });
+        }
+
+        if (dimensionMax) {
+            const maxSurface = parseFloat(dimensionMax);
+            filteredEquipements = filteredEquipements.filter(equip => {
+                const surface = parseFloat(equip.equip_surf) || 
+                            (parseFloat(equip.equip_long) || 0) * (parseFloat(equip.equip_larg) || 0);
+                
+                return surface > 0 && surface <= maxSurface;
             });
         }
 
