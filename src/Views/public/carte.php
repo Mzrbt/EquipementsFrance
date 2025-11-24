@@ -112,13 +112,10 @@ function initMap() {
 }
 
 async function loadEquipements() {
-    // Récupérer les filtres
+
     const type = document.getElementById('filter-type').value;
     const commune = document.getElementById('filter-commune').value;
     const statut = document.getElementById('filter-statut').value;
-    
-    // Construire l'URL avec les filtres
-    let url = `${API_URL}?limit=100 `;
     
     let whereConditions = [];
     if (type) {
@@ -128,25 +125,41 @@ async function loadEquipements() {
         whereConditions.push(`new_name LIKE "${commune}%"`);
     }
     
-    if (whereConditions.length > 0) {
-        url += `&where=${encodeURIComponent(whereConditions.join(' AND '))}`;
-    }
+    const whereClause = whereConditions.length > 0 
+        ? `&where=${encodeURIComponent(whereConditions.join(' AND '))}` 
+        : '';
     
     try {
-        const response = await fetch(url);
-        const data = await response.json();
+
+        const limit = 100;
+        const totalToFetch = 500;
+        let allEquipements = [];
+        let offset = 0;
         
-        // Mettre à jour le compteur
-        document.getElementById('total-count').textContent = formatNumber(data.total_count || 0);
-        
-        // Afficher les marqueurs sur la carte
-        displayMarkers(data.results || []);
-        
-        // Afficher la liste des équipements
-        displayEquipementsList(data.results || []);
+        while (allEquipements.length < totalToFetch) {
+            console.log('Boucle infinie');
+            const url = `${API_URL}?limit=${limit}&offset=${offset}${whereClause}`;
+            const reponse = await fetch(url);
+            const data = await reponse.json();
+
+            if (!data.results || data.results.length === 0) break;
+
+            allEquipements = allEquipements.concat(data.results);
+            offset += limit;
+
+            if (allEquipements.length >= data.total_count) break;
+        }
+
+        const finalCountResponse = await fetch(`${API_URL}?limit=0${whereClause}`);
+        const finalCountData = await finalCountResponse.json();
+        document.getElementById('total-count').textContent = formatNumber(finalCountData.total_count || 0);
+
+        displayMarkers(allEquipements);
+        displayEquipementsList(allEquipements);
         
     } catch (error) {
         console.error('Erreur lors du chargement des équipements:', error);
+        document.getElementById('total-count').textContent = '0';
     }
 }
 
