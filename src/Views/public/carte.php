@@ -1,5 +1,4 @@
 <div class="map-container">
-    <!-- Sidebar filtres -->
     <aside class="map-sidebar">
         <h2 class="map-sidebar-title">Rechercher des équipements</h2>
         
@@ -8,9 +7,6 @@
                 <label class="form-label">Type d'équipement</label>
                 <select class="form-select" id="filter-type" name="type">
                     <option value="">Tous les types</option>
-                    <?php foreach ($typesEquipements as $type): ?>
-                        <option value="<?= e($type['nom']) ?>"><?= e($type['nom']) ?></option>
-                    <?php endforeach; ?>
                 </select>
             </div>
             
@@ -18,18 +14,8 @@
                 <label class="form-label">Accessibilité</label>
                 <select class="form-select" id="filter-accessibilite" name="accessibilite">
                     <option value="">Toutes les options</option>
-                    <option value="1">Accessible PMR</option>
-                    <option value="0">Non accessible PMR</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">Statut</label>
-                <select class="form-select" id="filter-statut" name="statut">
-                    <option value="">Tous les statuts</option>
-                    <option value="en_service">En service</option>
-                    <option value="en_travaux">En travaux</option>
-                    <option value="ferme">Fermé</option>
+                    <option value="true">Accessible PMR</option>
+                    <option value="false">Non accessible PMR</option>
                 </select>
             </div>
 
@@ -66,50 +52,51 @@
         </div>
     </aside>
     
-    <!-- Carte -->
     <div class="map-wrapper">
         <div id="map"></div>
-        
-        <!-- Légende -->
-        <div class="map-legend">
-            <strong style="display: block; margin-bottom: 0.5rem;">Légende</strong>
-            <div class="legend-item">
-                <span class="legend-dot en-service"></span>
-                <span>En service</span>
-            </div>
-            <div class="legend-item">
-                <span class="legend-dot en-travaux"></span>
-                <span>En travaux</span>
-            </div>
-            <div class="legend-item">
-                <span class="legend-dot ferme"></span>
-                <span>Fermé</span>
-            </div>
-        </div>
     </div>
 </div>
 
-<!-- Liste des équipements (en bas) -->
 <div class="container">
     <div class="equipements-grid mt-4" id="equipements-list">
-        <!-- Les équipements seront chargés ici via JavaScript -->
         <p class="text-muted">Chargement des équipements...</p>
     </div>
 </div>
 
 <script>
-// Configuration de la carte
 const API_URL = 'https://equipements.sports.gouv.fr/api/explore/v2.1/catalog/datasets/data-es/records';
 
 let map;
 let markers = [];
 
-// Initialisation de la carte
+async function loadTypesEquipements() {
+    try {
+        const response = await fetch('https://equipements.sports.gouv.fr/api/explore/v2.1/catalog/datasets/data-es/facets');
+        const data = await response.json();
+        
+        const facet = data.facets.find(f => f.name === 'equip_type_name');
+        if (facet) {
+            const select = document.getElementById('filter-type');
+            
+            const types = facet.facets.sort((a, b) => a.name.localeCompare(b.name));
+            
+            types.forEach(type => {
+                const option = document.createElement('option');
+                option.value = type.name;
+                option.textContent = `${type.name} (${type.count})`;
+                select.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Erreur chargement types:', error);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     initMap();
+    loadTypesEquipements();
     loadEquipements();
     
-    // Gestion du formulaire de filtres
     document.getElementById('filters-form').addEventListener('submit', function(e) {
         e.preventDefault();
         loadEquipements();
@@ -117,10 +104,8 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initMap() {
-    // Centrer sur la France
     map = L.map('map').setView([46.603354, 1.888334], 6);
     
-    // Ajouter le fond de carte OpenStreetMap
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
     }).addTo(map);
@@ -130,8 +115,8 @@ async function loadEquipements() {
 
     const type = document.getElementById('filter-type').value;
     const commune = document.getElementById('filter-commune').value;
-    const statut = document.getElementById('filter-statut').value;
     const dimensionMax = document.getElementById('filter-dimension').value;
+    const accessibilite = document.getElementById('filter-accessibilite').value;
     
     let whereConditions = [];
     if (type) {
@@ -139,6 +124,9 @@ async function loadEquipements() {
     }
     if (commune) {
         whereConditions.push(`new_name LIKE "${commune}%"`);
+    }
+    if (accessibilite) {
+        whereConditions.push(`equip_pmr_acc="${accessibilite}"`);
     }
     
     const whereClause = whereConditions.length > 0 
@@ -153,7 +141,6 @@ async function loadEquipements() {
         let offset = 0;
         
         while (allEquipements.length < totalToFetch) {
-            console.log('Boucle infinie');
             const url = `${API_URL}?limit=${limit}&offset=${offset}${whereClause}`;
             const reponse = await fetch(url);
             const data = await reponse.json();
