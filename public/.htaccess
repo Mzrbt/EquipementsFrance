@@ -1,0 +1,13 @@
+RewriteEngine On
+RewriteBase /equipements_sportifs/public/
+
+# Rediriger vers index.php si le fichier/dossier n'existe pas
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]
+
+# Protection contre l'accès direct aux fichiers sensibles
+<FilesMatch "\.(sql|md|json)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
