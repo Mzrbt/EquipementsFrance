@@ -67,7 +67,6 @@
 const API_URL = 'https://equipements.sports.gouv.fr/api/explore/v2.1/catalog/datasets/data-es/records';
 
 let map;
-let markers = [];
 
 async function loadTypesEquipements() {
     try {
@@ -103,12 +102,22 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+let markerClusterGroup;
+
 function initMap() {
     map = L.map('map').setView([46.603354, 1.888334], 6);
     
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
     }).addTo(map);
+
+    markerClusterGroup = L.markerClusterGroup({
+        maxClusterRadius: 80,
+        spiderfyOnMaxZoom: true,
+        showCoverageOnHover: false
+    });
+
+    map.addLayer(markerClusterGroup);
 }
 
 async function loadEquipements() {
@@ -143,7 +152,7 @@ async function loadEquipements() {
     try {
 
         const limit = 100;
-        const totalToFetch = communeCoords ? 1000 : 500;
+        const totalToFetch = 1000;
         let allEquipements = [];
         let offset = 0;
         
@@ -194,9 +203,9 @@ async function loadEquipements() {
 }
 
 function displayMarkers(equipements) {
-    markers.forEach(marker => map.removeLayer(marker));
-    markers = [];
-    
+
+    markerClusterGroup.clearLayers();
+
     equipements.forEach(equip => {
         if (equip.equip_coordonnees) {
             const lat = equip.equip_coordonnees.lat;
@@ -220,14 +229,13 @@ function displayMarkers(equipements) {
                     ${equip.new_name || ''} ${equip.inst_cp || ''}<br>
                     ${equip.inst_adresse || 'Adresse non renseignée'}
                 `);
-                
-                marker.addTo(map);
-                markers.push(marker);
+
+                markerClusterGroup.addLayer(marker);
             }
         }
     });
     
-    if (communeCoords && markers.length > 0) {
+    if (communeCoords && markerClusterGroup.getLayers().length > 0) {
         map.setView([communeCoords.lat, communeCoords.lon], 11);
     }
 }
