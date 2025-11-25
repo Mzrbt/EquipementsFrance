@@ -31,10 +31,10 @@
 
             <div class="form-group" id="rayon-container" style="display: none;">
                 <label class="form-label">Rayon de recherche</label>
-                <input type="range" id="filter-rayon" min="5" max="100" value="20" step="5" class="form-range" style="width: 100%;">
+                <input type="range" id="filter-rayon" min="5" max="100" value="5" step="5" class="form-range" style="width: 100%;">
                 <div style="display: flex; justify-content: space-between; font-size: 0.875rem; color: var(--text-muted); margin-top: 0.5rem;">
                     <span>5km</span>
-                    <span id="rayon-value" style="font-weight: 600; color: var(--primary);">20km</span>
+                    <span id="rayon-value" style="font-weight: 600; color: var(--primary);">5km</span>
                     <span>100km</span>
                 </div>
             </div>
@@ -122,32 +122,45 @@ async function loadEquipements() {
     if (type) {
         whereConditions.push(`equip_type_name="${type}"`);
     }
-    if (commune) {
-        whereConditions.push(`new_name LIKE "${commune}%"`);
-    }
     if (accessibilite) {
         whereConditions.push(`equip_pmr_acc="${accessibilite}"`);
+    }
+    if (commune && commune.length >= 3) {
+        whereConditions.push(`new_name LIKE "${commune}%"`);
     }
     
     const whereClause = whereConditions.length > 0 
         ? `&where=${encodeURIComponent(whereConditions.join(' AND '))}` 
         : '';
+
+    let geofilter = '';
+    if (communeCoords) {
+        const rayon = parseInt(document.getElementById('filter-rayon').value);
+        const rayonMetres = rayon * 1000;
+        geofilter = `&geofilter.distance=${communeCoords.lat},${communeCoords.lon},${rayonMetres}`;
+    }
     
     try {
 
         const limit = 100;
-        const totalToFetch = 1000;
+        const totalToFetch = communeCoords ? 1000 : 500;
         let allEquipements = [];
         let offset = 0;
         
         while (allEquipements.length < totalToFetch) {
-            const url = `${API_URL}?limit=${limit}&offset=${offset}${whereClause}`;
+            const url = `${API_URL}?limit=${limit}&offset=${offset}${whereClause}${geofilter}`;
+            console.log('URL API:', url);
             const reponse = await fetch(url);
             const data = await reponse.json();
+
+            console.log('Résultats reçus:', data.results.length, '| Total API:', data.total_count);
 
             if (!data.results || data.results.length === 0) break;
 
             allEquipements = allEquipements.concat(data.results);
+
+            if (data.results.length < limit) break;
+
             offset += limit;
 
             if (allEquipements.length === 100) {
@@ -157,26 +170,7 @@ async function loadEquipements() {
             if (allEquipements.length >= data.total_count) break;
         }
 
-        const rayon = parseInt(document.getElementById('filter-rayon').value);
         let filteredEquipements = allEquipements;
-
-        if (communeCoords) {
-            filteredEquipements = allEquipements.filter(equip => {
-                if (!equip.equip_coordonnees) return false;
-                const lat = equip.equip_coordonnees.lat;
-                const lon = equip.equip_coordonnees.lon;
-                if (!lat || !lon) return false;
-                
-                const distance = calculateDistance(
-                    communeCoords.lat, 
-                    communeCoords.lon, 
-                    lat, 
-                    lon
-                );
-                
-                return distance <= rayon;
-            });
-        }
 
         if (dimensionMax) {
             const maxSurface = parseFloat(dimensionMax);
@@ -325,6 +319,10 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
               Math.sin(dLon/2) * Math.sin(dLon/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     return R * c;
+}
+
+function formatNumber(num) {
+    return num.toLocaleString('fr-FR');
 }
 
 function escapeHtml(text) {
