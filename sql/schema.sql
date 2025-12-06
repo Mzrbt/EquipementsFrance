@@ -89,6 +89,23 @@ CREATE TABLE IF NOT EXISTS types_equipements (
     famille VARCHAR(100)
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS collectivites_contacts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    dep_code VARCHAR(3) NOT NULL,
+    commune VARCHAR(255),
+    nom_collectivite VARCHAR(255) NOT NULL,
+    telephone VARCHAR(20),
+    email VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_commune (dep_code, commune)
+);
+
+INSERT INTO collectivites_contacts (dep_code, commune, nom_collectivite, telephone, email) VALUES
+('75', 'Paris', 'Mairie de Paris - Service des Sports', '01 42 76 40 40', 'sports@paris.fr'),
+('14', 'Caen', 'Mairie de Caen - Direction des Sports', '02 31 30 41 00', 'sports@caen.fr'),
+('50', 'Cherbourg-en-Cotentin', 'Mairie de Cherbourg - Sports', '02 33 87 88 89', 'sports@cherbourg.fr');
+
 -- Insertion des types d'équipements courants
 INSERT INTO types_equipements (nom, famille) VALUES
 ('Gymnase', 'Salle'),

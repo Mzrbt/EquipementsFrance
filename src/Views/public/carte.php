@@ -304,19 +304,26 @@ async function loadEquipements() {
         console.log('Total département:', allEquipements.length);
 
         // FILTRER PAR RAYON
-        let filteredEquipements = allEquipements.filter(equip => {
-            if (!equip.equip_coordonnees) return false;
-            const lat = equip.equip_coordonnees.lat;
-            const lon = equip.equip_coordonnees.lon;
-            if (!lat || !lon) return false;
-            
-            const distance = calculateDistance(communeCoords.lat, communeCoords.lon, lat, lon);
-            return distance <= rayon;
-        });
+        let filteredEquipements = allEquipements
+            .map(equip => {
+                if (!equip.equip_coordonnees) return null;
+                const lat = equip.equip_coordonnees.lat;
+                const lon = equip.equip_coordonnees.lon;
+                if (!lat || !lon) return null;
+                
+                const distance = calculateDistance(communeCoords.lat, communeCoords.lon, lat, lon);
+                
+                if (distance <= rayon) {
+                    return {
+                        ...equip,
+                        distance: distance
+                    };
+                }
+                return null;
+            })
+            .filter(equip => equip !== null)
+            .sort((a, b) => a.distance - b.distance);
 
-        console.log('Après filtre rayon:', filteredEquipements.length);
-
-        // Filtrer par dimension
         if (dimensionMax) {
             const maxSurface = parseFloat(dimensionMax);
             filteredEquipements = filteredEquipements.filter(equip => {
@@ -396,6 +403,7 @@ function displayEquipementsList(equipements) {
             <p class="equipement-card-info"><strong>Ville :</strong> ${escapeHtml(equip.arr_name || equip.new_name || '-')}</p>
             <p class="equipement-card-info"><strong>Adresse :</strong> ${escapeHtml(equip.inst_adresse || '-')}</p>
             <p class="equipement-card-info"><strong>Type :</strong> ${escapeHtml(equip.equip_type_name || '-')}</p>
+            <p class="equipement-card-info"><strong>Distance :</strong> ${equip.distance ? equip.distance.toFixed(1) + ' km' : '-'}</p>
             <p class="equipement-card-info"><strong>Surface :</strong> ${equip.equip_surf ? equip.equip_surf + ' m²' : '-'}</p>
         </div>
     `).join('');
