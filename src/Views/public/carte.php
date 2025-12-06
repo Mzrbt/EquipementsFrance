@@ -52,8 +52,15 @@
         </div>
     </aside>
     
-    <div class="map-wrapper">
+    <div class="map-wrapper" style="position: relative; height: 100%;">
         <div id="map"></div>
+        
+        <div id="loading-overlay" style="display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255, 255, 255, 0.9); z-index: 999999; display: flex; align-items: center; justify-content: center;">
+            <svg width="60" height="60" viewBox="0 0 50 50" style="animation: spin 0.8s linear infinite;">
+                <circle cx="25" cy="25" r="20" fill="none" stroke="rgba(59, 130, 246, 0.2)" stroke-width="5"></circle>
+                <circle cx="25" cy="25" r="20" fill="none" stroke="#3b82f6" stroke-width="5" stroke-dasharray="31.4 31.4" stroke-linecap="round"></circle>
+            </svg>
+        </div>
     </div>
 </div>
 
@@ -172,7 +179,7 @@ async function loadTypesEquipements() {
         const response = await fetch('https://equipements.sports.gouv.fr/api/explore/v2.1/catalog/datasets/data-es/facets');
         const data = await response.json();
         
-        const facet = data.facets.find(f => f.name === 'equip_type_name');
+        const facet = data.facets ? data.facets.find(f => f.name === 'equip_type_name') : null;
         if (facet) {
             const select = document.getElementById('filter-type');
             
@@ -220,6 +227,9 @@ function initMap() {
 }
 
 async function loadEquipements() {
+
+    document.getElementById('loading-overlay').style.display = 'flex';
+
     const type = document.getElementById('filter-type').value;
     const dimensionMax = document.getElementById('filter-dimension').value;
     const accessibilite = document.getElementById('filter-accessibilite').value;
@@ -228,6 +238,7 @@ async function loadEquipements() {
         document.getElementById('total-count').textContent = '0';
         markerClusterGroup.clearLayers();
         document.getElementById('equipements-list').innerHTML = '<p class="text-muted">Veuillez sélectionner une commune pour commencer la recherche.</p>';
+        document.getElementById('loading-overlay').style.display = 'none';
         return;
     }
     
@@ -286,6 +297,8 @@ async function loadEquipements() {
             
             // Limite à 10000 pour éviter de tout charger
             if (offset >= 10000) break;
+
+            await new Promise(resolve => setTimeout(resolve, 100));
         }
 
         console.log('Total département:', allEquipements.length);
@@ -316,10 +329,12 @@ async function loadEquipements() {
         document.getElementById('total-count').textContent = formatNumber(filteredEquipements.length);
         displayMarkers(filteredEquipements);
         displayEquipementsList(filteredEquipements);
+
+        document.getElementById('loading-overlay').style.display = 'none';
         
     } catch (error) {
         console.error('Erreur:', error);
-        document.getElementById('total-count').textContent = '0';
+        document.getElementById('loading-overlay').style.display = 'none';
     }
 }
 
