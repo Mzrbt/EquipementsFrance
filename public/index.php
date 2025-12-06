@@ -27,7 +27,6 @@ $routes = [
         '/carte' => 'PublicController@carte',
         '/equipements' => 'PublicController@equipements',
         '/equipement/{id}' => 'PublicController@equipementDetail',
-        '/api' => 'PublicController@apiDoc',
         
         // Auth
         '/connexion' => 'AuthController@loginForm',

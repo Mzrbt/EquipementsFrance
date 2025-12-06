@@ -46,7 +46,6 @@
                         <a href="/equipements_sportifs/public/admin" class="nav-link <?= ($currentPage ?? '') === 'admin' ? 'active' : '' ?>">Tableau de bord</a>
                     <?php endif; ?>
                     
-                    <a href="/equipements_sportifs/public/api" class="nav-link <?= ($currentPage ?? '') === 'api' ? 'active' : '' ?>">API</a>
                     <a href="/equipements_sportifs/public/profil" class="nav-link <?= ($currentPage ?? '') === 'profil' ? 'active' : '' ?>">Profil</a>
                 <?php endif; ?>
             </nav>
