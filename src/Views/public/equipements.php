@@ -47,9 +47,9 @@
         <div class="modal">
             <div class="modal-header">
                 <h2 class="modal-title" id="modal-title">Détails de l'équipement</h2>
-                <button type="button" id="close-modal-btn" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); line-height: 1;">&times;</button>            </div>
-            <div class="modal-body" id="modal-body">
+                <button type="button" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); line-height: 1;" onclick="document.getElementById('equipement-modal').classList.remove('active'); document.body.style.overflow = '';">&times;</button>
             </div>
+            <div class="modal-body" id="modal-body"></div>
         </div>
     </div>
 </div>
@@ -524,16 +524,11 @@ async function openEquipementModal(equipementId) {
     document.body.style.overflow = 'hidden';
 }
 
-function closeModal() {
-    const modal = document.getElementById('equipement-modal');
-    modal.classList.remove('active');
-    document.body.style.overflow = ''; 
-}
-
 document.addEventListener('click', function(e) {
     const modal = document.getElementById('equipement-modal');
     if (e.target === modal) {
-        closeModal();
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
     }
 });
 
