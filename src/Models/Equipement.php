@@ -18,10 +18,12 @@ class Equipement {
     public function create(array $data): bool {
         $sql = "INSERT INTO equipements (
             user_id, nom, type_equipement, statut, adresse, commune, code_postal,
-            latitude, longitude, surface, accessible_pmr, acces_libre, observations
+            latitude, longitude, surface, accessible_pmr, acces_libre, observations,
+            telephone, email
         ) VALUES (
             :user_id, :nom, :type_equipement, :statut, :adresse, :commune, :code_postal,
-            :latitude, :longitude, :surface, :accessible_pmr, :acces_libre, :observations
+            :latitude, :longitude, :surface, :accessible_pmr, :acces_libre, :observations,
+            :telephone, :email
         )";
         
         $stmt = $this->pdo->prepare($sql);
@@ -38,7 +40,9 @@ class Equipement {
             'surface' => $data['surface'] ?? null,
             'accessible_pmr' => $data['accessible_pmr'] ?? 0,
             'acces_libre' => $data['acces_libre'] ?? 0,
-            'observations' => $data['observations'] ?? null
+            'observations' => $data['observations'] ?? null,
+            'telephone' => $data['telephone'] ?? null,
+            'email' => $data['email'] ?? null
         ]);
     }
     
@@ -77,7 +81,9 @@ class Equipement {
             surface = :surface,
             accessible_pmr = :accessible_pmr,
             acces_libre = :acces_libre,
-            observations = :observations
+            observations = :observations,
+            telephone = :telephone,
+            email = :email
             WHERE id = :id";
         
         $stmt = $this->pdo->prepare($sql);
@@ -94,7 +100,9 @@ class Equipement {
             'surface' => $data['surface'] ?? null,
             'accessible_pmr' => $data['accessible_pmr'] ?? 0,
             'acces_libre' => $data['acces_libre'] ?? 0,
-            'observations' => $data['observations'] ?? null
+            'observations' => $data['observations'] ?? null,
+            'telephone' => $data['telephone'] ?? null,
+            'email' => $data['email'] ?? null
         ]);
     }
     

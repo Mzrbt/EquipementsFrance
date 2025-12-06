@@ -62,6 +62,8 @@ CREATE TABLE IF NOT EXISTS equipements (
     -- Autres
     url VARCHAR(255),
     observations TEXT,
+    telephone VARCHAR(20),
+    email VARCHAR(255),
     
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

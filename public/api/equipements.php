@@ -28,6 +28,8 @@ try {
                 'lon' => (float)$equip['longitude']
             ],
             'dep_code' => substr($equip['code_postal'] ?? '00000', 0, 2),
+            'telephone' => trim($equip['telephone'] ?? ''),
+            'email' => trim($equip['email'] ?? ''),
             'source' => 'local'
         ];
     }, $equipements);

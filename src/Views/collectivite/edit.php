@@ -56,6 +56,18 @@
                 <label class="form-label">Surface (m²)</label>
                 <input type="number" step="0.01" name="surface" class="form-input" placeholder="Ex: 1200" value="<?= e($equipement['surface'] ?? '') ?>">
             </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label class="form-label">Téléphone de contact</label>
+                    <input type="tel" name="telephone" class="form-input" placeholder="Ex: 02 31 30 41 00" value="<?= e($equipement['telephone'] ?? '') ?>">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Email de contact</label>
+                    <input type="email" name="email" class="form-input" placeholder="Ex: stade@mairie.fr" value="<?= e($equipement['email'] ?? '') ?>">
+                </div>
+            </div>
             
             <div class="form-group">
                 <label class="form-checkbox">
@@ -66,7 +78,7 @@
             
             <div class="form-group">
                 <label class="form-checkbox">
-                    <input type="checkbox" name="accessible_pmr" <?= $equipement['accessible_pmr'] ? 'checked' : '' ?>>
+                    <input type="checkbox" name="acces_libre" <?= $equipement['acces_libre'] ? 'checked' : '' ?>>
                     <span>Accès libre au public</span>
                 </label>
             </div>

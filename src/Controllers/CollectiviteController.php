@@ -86,7 +86,9 @@ class CollectiviteController {
             'surface' => !empty($_POST['surface']) ? (float)$_POST['surface'] : null,
             'accessible_pmr' => isset($_POST['accessible_pmr']) ? 1 : 0,
             'acces_libre' => isset($_POST['acces_libre']) ? 1 : 0,
-            'observations' => trim($_POST['observations'] ?? '')
+            'observations' => trim($_POST['observations'] ?? ''),
+            'telephone' => trim($_POST['telephone'] ?? ''),
+            'email' => trim($_POST['email'] ?? '')
         ];
         
         if (empty($data['nom']) || empty($data['type_equipement'])) {
@@ -162,7 +164,7 @@ class CollectiviteController {
         $data = [
             'nom' => trim($_POST['nom'] ?? ''),
             'type_equipement' => $_POST['type_equipement'] ?? '',
-            'statut' => $equipement['statut'], // Garder le statut actuel
+            'statut' => $equipement['statut'],
             'adresse' => trim($_POST['adresse'] ?? ''),
             'commune' => trim($_POST['commune'] ?? ''),
             'code_postal' => trim($_POST['code_postal'] ?? ''),
@@ -171,7 +173,9 @@ class CollectiviteController {
             'surface' => !empty($_POST['surface']) ? (float)$_POST['surface'] : null,
             'accessible_pmr' => isset($_POST['accessible_pmr']) ? 1 : 0,
             'acces_libre' => isset($_POST['acces_libre']) ? 1 : 0,
-            'observations' => trim($_POST['observations'] ?? '')
+            'observations' => trim($_POST['observations'] ?? ''),
+            'telephone' => trim($_POST['telephone'] ?? ''),
+            'email' => trim($_POST['email'] ?? '')
         ];
         
         if ($this->equipementModel->update((int)$id, $data)) {
