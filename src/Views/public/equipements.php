@@ -396,7 +396,7 @@ function escapeHtml(text) {
 // Stocker tous les équipements chargés
 let allLoadedEquipements = [];
 
-function openEquipementModal(equipementId) {
+async function openEquipementModal(equipementId) {
     const equip = allLoadedEquipements.find(e => (e.equip_numero || e.equip_id) === equipementId);
     
     if (!equip) {
@@ -410,7 +410,44 @@ function openEquipementModal(equipementId) {
     
     modalTitle.textContent = equip.inst_nom || equip.equip_nom || 'Sans nom';
     
+    // Charger les contacts de la collectivité
+    let contactHtml = '';
+    try {
+        const depCode = equip.dep_code;
+        const commune = equip.new_name || equip.arr_name;
+        
+        const response = await fetch(`/equipements_sportifs/public/api/contacts.php?dep_code=${depCode}&commune=${encodeURIComponent(commune)}`);
+        const contact = await response.json();
+        
+        if (!contact.error) {
+            contactHtml = `
+                <div style="background: rgba(37, 99, 235, 0.05); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                    <h4 style="margin: 0 0 0.75rem 0; font-size: 1rem; color: var(--primary);">📞 Contact de la collectivité</h4>
+                    <div class="detail-row" style="border: none; padding: 0.25rem 0;">
+                        <div class="detail-label">Collectivité</div>
+                        <div class="detail-value">${contact.nom_collectivite}</div>
+                    </div>
+                    ${contact.telephone ? `
+                        <div class="detail-row" style="border: none; padding: 0.25rem 0;">
+                            <div class="detail-label">Téléphone</div>
+                            <div class="detail-value"><a href="tel:${contact.telephone}" style="color: var(--primary);">${contact.telephone}</a></div>
+                        </div>
+                    ` : ''}
+                    ${contact.email ? `
+                        <div class="detail-row" style="border: none; padding: 0.25rem 0;">
+                            <div class="detail-label">Email</div>
+                            <div class="detail-value"><a href="mailto:${contact.email}" style="color: var(--primary);">${contact.email}</a></div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Erreur chargement contact:', error);
+    }
+    
     modalBody.innerHTML = `
+        ${contactHtml}
         <div>
             <div class="detail-row">
                 <div class="detail-label">Numéro d'équipement</div>

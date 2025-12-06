@@ -70,6 +70,90 @@
     </div>
 </div>
 
+<div id="equipement-modal" class="modal-overlay">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 class="modal-title" id="modal-title">Détails de l'équipement</h2>
+            <button type="button" id="close-modal-btn" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); line-height: 1;">&times;</button>
+        </div>
+        <div class="modal-body" id="modal-body">
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.modal-overlay.active {
+    display: flex;
+}
+
+.modal {
+    background: var(--bg-white);
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 0;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.detail-row {
+    display: flex;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    font-weight: 600;
+    width: 180px;
+    flex-shrink: 0;
+}
+
+.detail-value {
+    color: var(--text-muted);
+}
+</style>
+
 <script>
 const API_URL = 'https://equipements.sports.gouv.fr/api/explore/v2.1/catalog/datasets/data-es/records';
 
@@ -365,13 +449,15 @@ function displayMarkers(equipements) {
                 });
                 
                 const marker = L.marker([lat, lon], { icon: redIcon });
-                
-                marker.bindPopup(`
+
+                marker.bindTooltip(`
                     <strong>${equip.equip_nom || 'Sans nom'}</strong><br>
-                    <em>${equip.equip_type_name || 'Type inconnu'}</em><br>
-                    ${equip.new_name || ''} ${equip.inst_cp || ''}<br>
-                    ${equip.inst_adresse || 'Adresse non renseignée'}
+                    <em>${equip.equip_type_name || 'Type inconnu'}</em>
                 `);
+
+                marker.on('click', function() {
+                    openEquipementModal(equip.equip_numero || equip.equip_id);
+                });
 
                 markerClusterGroup.addLayer(marker);
             }
@@ -384,6 +470,9 @@ function displayMarkers(equipements) {
 }
 
 function displayEquipementsList(equipements) {
+
+    allLoadedEquipements = equipements;
+
     const container = document.getElementById('equipements-list');
     
     if (equipements.length === 0) {
@@ -392,7 +481,7 @@ function displayEquipementsList(equipements) {
     }
     
     const cardsHtml = equipements.slice(0, 12).map(equip => `
-        <div class="equipement-card" onclick="window.location.href='/equipements_sportifs/public/equipements?id=${equip.equip_numero || equip.equip_id}'" style="cursor: pointer;">
+        <div class="equipement-card" onclick="openEquipementModal('${equip.equip_numero || equip.equip_id}')" style="cursor: pointer;">
             <div class="equipement-card-header">
                 <div>
                     <h3 class="equipement-card-title">${escapeHtml(equip.inst_nom || equip.equip_nom || 'Sans nom')}</h3>
@@ -503,6 +592,139 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 function formatNumber(num) {
     return num.toLocaleString('fr-FR');
 }
+
+// Stocker tous les équipements chargés
+let allLoadedEquipements = [];
+
+async function openEquipementModal(equipementId) {
+    const equip = allLoadedEquipements.find(e => (e.equip_numero || e.equip_id) === equipementId);
+    
+    if (!equip) {
+        console.error('Équipement non trouvé:', equipementId);
+        return;
+    }
+    
+    const modal = document.getElementById('equipement-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalBody = document.getElementById('modal-body');
+    
+    modalTitle.textContent = equip.inst_nom || equip.equip_nom || 'Sans nom';
+    
+    // Charger les contacts de la collectivité
+    let contactHtml = '';
+    try {
+        const depCode = equip.dep_code;
+        const commune = equip.new_name || equip.arr_name;
+        
+        const response = await fetch(`/equipements_sportifs/public/api/contacts.php?dep_code=${depCode}&commune=${encodeURIComponent(commune)}`);
+        const contact = await response.json();
+        
+        if (!contact.error) {
+            contactHtml = `
+                <div style="background: rgba(37, 99, 235, 0.05); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                    <h4 style="margin: 0 0 0.75rem 0; font-size: 1rem; color: var(--primary);">📞 Contact de la collectivité</h4>
+                    <div class="detail-row" style="border: none; padding: 0.25rem 0;">
+                        <div class="detail-label">Collectivité</div>
+                        <div class="detail-value">${contact.nom_collectivite}</div>
+                    </div>
+                    ${contact.telephone ? `
+                        <div class="detail-row" style="border: none; padding: 0.25rem 0;">
+                            <div class="detail-label">Téléphone</div>
+                            <div class="detail-value"><a href="tel:${contact.telephone}" style="color: var(--primary);">${contact.telephone}</a></div>
+                        </div>
+                    ` : ''}
+                    ${contact.email ? `
+                        <div class="detail-row" style="border: none; padding: 0.25rem 0;">
+                            <div class="detail-label">Email</div>
+                            <div class="detail-value"><a href="mailto:${contact.email}" style="color: var(--primary);">${contact.email}</a></div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Erreur chargement contact:', error);
+    }
+    
+    modalBody.innerHTML = `
+        ${contactHtml}
+        <div>
+            <div class="detail-row">
+                <div class="detail-label">Numéro d'équipement</div>
+                <div class="detail-value">${equip.equip_numero || '-'}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Type</div>
+                <div class="detail-value">${equip.equip_type_name || '-'}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Ville</div>
+                <div class="detail-value">${equip.arr_name || equip.new_name || '-'}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Code postal</div>
+                <div class="detail-value">${equip.inst_cp || '-'}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Adresse</div>
+                <div class="detail-value">${equip.inst_adresse || '-'}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Surface</div>
+                <div class="detail-value">${equip.equip_surf ? equip.equip_surf + ' m²' : '-'}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Longueur</div>
+                <div class="detail-value">${equip.equip_long ? equip.equip_long + ' m' : '-'}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Largeur</div>
+                <div class="detail-value">${equip.equip_larg ? equip.equip_larg + ' m' : '-'}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Accessible PMR</div>
+                <div class="detail-value">${equip.equip_pmr_acc === 'true' ? '✅ Oui' : '❌ Non'}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Nature du sol</div>
+                <div class="detail-value">${equip.equip_nature_sol_lib || '-'}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Installation</div>
+                <div class="detail-value">${equip.inst_nom || '-'}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Département</div>
+                <div class="detail-value">${equip.dep_nom || equip.dep_code || '-'}</div>
+            </div>
+        </div>
+    `;
+    
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+    const modal = document.getElementById('equipement-modal');
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+// Fermer en cliquant en dehors
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('equipement-modal');
+    if (e.target === modal) {
+        closeModal();
+    }
+});
+
+// Event listener pour le bouton de fermeture
+document.addEventListener('DOMContentLoaded', function() {
+    const closeBtn = document.getElementById('close-modal-btn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeModal);
+    }
+});
 
 function escapeHtml(text) {
     if (!text) return '';
