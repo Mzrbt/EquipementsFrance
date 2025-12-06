@@ -326,17 +326,14 @@ async function loadEquipements() {
         return;
     }
     
-    // Récupérer le département depuis l'API géocodage
     const commune = document.getElementById('filter-commune').value.trim();
     const geoResponse = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(commune)}&type=municipality&limit=1`);
     const geoData = await geoResponse.json();
     
     const departementPrincipal = geoData.features[0].properties.citycode.substring(0, 2);
 
-    // Récupérer le rayon AVANT de déterminer les départements
     const rayon = parseInt(document.getElementById('filter-rayon').value);
 
-    // Si rayon > 50km, on prend les départements voisins
     const departementsAChercher = rayon > 50 && departementsVoisins[departementPrincipal] 
         ? departementsVoisins[departementPrincipal] 
         : [departementPrincipal];
@@ -345,7 +342,6 @@ async function loadEquipements() {
 
     let whereConditions = [];
 
-    // Filtrer par plusieurs départements
     if (departementsAChercher.length === 1) {
         whereConditions.push(`dep_code="${departementsAChercher[0]}"`);
     } else {
@@ -367,7 +363,6 @@ async function loadEquipements() {
         let allEquipements = [];
         let offset = 0;
         
-        // Récupérer TOUS les équipements du département
         while (true) {
             const url = `${API_URL}?limit=${limit}&offset=${offset}${whereClause}`;
             console.log('Chargement:', offset, 'équipements...');
@@ -379,15 +374,26 @@ async function loadEquipements() {
             if (data.results.length < limit) break;
             offset += limit;
             
-            // Limite à 10000 pour éviter de tout charger
             if (offset >= 10000) break;
 
             await new Promise(resolve => setTimeout(resolve, 100));
         }
+        
+        console.log('Total département API:', allEquipements.length);
 
-        console.log('Total département:', allEquipements.length);
+        try {
+            const localResponse = await fetch('/equipements_sportifs/public/api/equipements.php');
+            const localData = await localResponse.json();
+            
+            if (localData.results && localData.results.length > 0) {
+                console.log('Équipements locaux:', localData.results.length);
+                allEquipements = allEquipements.concat(localData.results);
+                console.log('Total après fusion:', allEquipements.length);
+            }
+        } catch (error) {
+            console.error('Erreur chargement équipements locaux:', error);
+        }
 
-        // FILTRER PAR RAYON
         let filteredEquipements = allEquipements
             .map(equip => {
                 if (!equip.equip_coordonnees) return null;

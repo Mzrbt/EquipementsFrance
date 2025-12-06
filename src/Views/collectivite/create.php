@@ -82,4 +82,47 @@
             </div>
         </form>
     </div>
+
+    <script>
+    let geocodeTimer = null;
+
+    function updateGeolocation() {
+        const adresse = document.querySelector('input[name="adresse"]').value.trim();
+        const commune = document.querySelector('input[name="commune"]').value.trim();
+        const codePostal = document.querySelector('input[name="code_postal"]').value.trim();
+        
+        const adresseComplete = [adresse, codePostal, commune].filter(v => v).join(' ');
+        
+        if (adresseComplete.length < 5) return;
+        
+        clearTimeout(geocodeTimer);
+        
+        geocodeTimer = setTimeout(async () => {
+            try {
+                const response = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(adresseComplete)}&limit=1`);
+                const data = await response.json();
+                
+                if (data.features && data.features.length > 0) {
+                    const coords = data.features[0].geometry.coordinates;
+                    
+                    document.querySelector('input[name="longitude"]').value = coords[0].toFixed(6);
+                    document.querySelector('input[name="latitude"]').value = coords[1].toFixed(6);
+                    
+                    document.querySelector('input[name="latitude"]').style.borderColor = '#22c55e';
+                    document.querySelector('input[name="longitude"]').style.borderColor = '#22c55e';
+                    
+                    setTimeout(() => {
+                        document.querySelector('input[name="latitude"]').style.borderColor = '';
+                        document.querySelector('input[name="longitude"]').style.borderColor = '';
+                    }, 2000);
+                }
+            } catch (error) {
+                console.error('Erreur géocodage:', error);
+            }
+        }, 500);
+    }
+    document.querySelector('input[name="adresse"]')?.addEventListener('input', updateGeolocation);
+    document.querySelector('input[name="commune"]')?.addEventListener('input', updateGeolocation);
+    document.querySelector('input[name="code_postal"]')?.addEventListener('input', updateGeolocation);
+    </script>
 </div>
