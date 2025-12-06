@@ -532,7 +532,20 @@ function goToFullList() {
 }
 
 function switchToList() {
-    window.location.href = '/equipements_sportifs/public/equipements';
+    const commune = document.getElementById('filter-commune').value;
+    const rayon = document.getElementById('filter-rayon').value;
+    const type = document.getElementById('filter-type').value;
+    const accessibilite = document.getElementById('filter-accessibilite').value;
+    const dimension = document.getElementById('filter-dimension').value;
+    
+    const params = new URLSearchParams();
+    if (commune) params.append('commune', commune);
+    if (rayon) params.append('rayon', rayon);
+    if (type) params.append('type', type);
+    if (accessibilite) params.append('accessibilite', accessibilite);
+    if (dimension) params.append('dimension', dimension);
+    
+    window.location.href = `/equipements_sportifs/public/equipements?${params.toString()}`;
 }
 
 let communeCoords = null;
@@ -743,7 +756,6 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Event listener pour le bouton de fermeture
 document.addEventListener('DOMContentLoaded', function() {
     const closeBtn = document.getElementById('close-modal-btn');
     if (closeBtn) {
