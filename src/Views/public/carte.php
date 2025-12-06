@@ -384,8 +384,8 @@ function displayEquipementsList(equipements) {
         return;
     }
     
-    container.innerHTML = equipements.slice(0, 12).map(equip => `
-        <div class="equipement-card">
+    const cardsHtml = equipements.slice(0, 12).map(equip => `
+        <div class="equipement-card" onclick="window.location.href='/equipements_sportifs/public/equipements?id=${equip.equip_numero || equip.equip_id}'" style="cursor: pointer;">
             <div class="equipement-card-header">
                 <div>
                     <h3 class="equipement-card-title">${escapeHtml(equip.inst_nom || equip.equip_nom || 'Sans nom')}</h3>
@@ -399,6 +399,33 @@ function displayEquipementsList(equipements) {
             <p class="equipement-card-info"><strong>Surface :</strong> ${equip.equip_surf ? equip.equip_surf + ' m²' : '-'}</p>
         </div>
     `).join('');
+    
+    const buttonHtml = equipements.length > 12 ? `
+        <div style="grid-column: 1 / -1; text-align: center; margin-top: 2rem;">
+            <button onclick="goToFullList()" class="btn btn-primary btn-lg">
+                Voir tous les ${formatNumber(equipements.length)} équipements
+            </button>
+        </div>
+    ` : '';
+    
+    container.innerHTML = cardsHtml + buttonHtml;
+}
+
+function goToFullList() {
+    const commune = document.getElementById('filter-commune').value;
+    const rayon = document.getElementById('filter-rayon').value;
+    const type = document.getElementById('filter-type').value;
+    const accessibilite = document.getElementById('filter-accessibilite').value;
+    const dimension = document.getElementById('filter-dimension').value;
+    
+    const params = new URLSearchParams();
+    if (commune) params.append('commune', commune);
+    if (rayon) params.append('rayon', rayon);
+    if (type) params.append('type', type);
+    if (accessibilite) params.append('accessibilite', accessibilite);
+    if (dimension) params.append('dimension', dimension);
+    
+    window.location.href = `/equipements_sportifs/public/equipements?${params.toString()}`;
 }
 
 function switchToList() {
