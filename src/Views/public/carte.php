@@ -81,6 +81,75 @@
     </div>
 </div>
 
+<div id="reservation-modal" class="modal-overlay">
+    <div class="modal reservation-modal">
+        <div class="modal-header">
+            <h2 class="modal-title">📅 Réserver cet équipement</h2>
+            <button type="button" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); line-height: 1;" onclick="closeReservationModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="reservation-form">
+                <div class="reservation-equipement-info" id="reservation-equipement-info">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">📅 Date de réservation</label>
+                    <input type="date" id="reservation-date" class="form-input" required min="">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">⏰ Créneau horaire</label>
+                    <div class="creneau-selector">
+                        <div class="creneau-card" data-creneau="matin">
+                            <div class="creneau-icon">🌅</div>
+                            <div class="creneau-label">Matin</div>
+                            <div class="creneau-time">8h - 12h</div>
+                        </div>
+                        <div class="creneau-card" data-creneau="apres-midi">
+                            <div class="creneau-icon">☀️</div>
+                            <div class="creneau-label">Après-midi</div>
+                            <div class="creneau-time">14h - 18h</div>
+                        </div>
+                        <div class="creneau-card" data-creneau="soiree">
+                            <div class="creneau-icon">🌙</div>
+                            <div class="creneau-label">Soirée</div>
+                            <div class="creneau-time">18h - 22h</div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="reservation-creneau" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">👥 Nombre de participants</label>
+                    <input type="number" id="reservation-personnes" class="form-input" value="1" min="1" max="100" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">📝 Commentaire (optionnel)</label>
+                    <textarea id="reservation-commentaire" class="form-input" rows="3" placeholder="Précisions sur votre réservation..."></textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-block btn-lg">
+                    ✅ Confirmer la réservation
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="confirmation-modal" class="modal-overlay">
+    <div class="modal confirmation-modal">
+        <div class="modal-body" style="text-align: center; padding: 3rem 2rem;">
+            <div class="success-animation">
+                <div class="checkmark">✓</div>
+            </div>
+            <h2 style="color: var(--success); margin: 1.5rem 0 1rem 0;">Réservation confirmée !</h2>
+            <p style="color: var(--text-muted); margin-bottom: 2rem;">Votre demande de réservation a été enregistrée.</p>
+            <button onclick="closeConfirmationModal()" class="btn btn-primary">Fermer</button>
+        </div>
+    </div>
+</div>
+
 <style>
 @keyframes spin {
     0% { transform: rotate(0deg); }
@@ -151,6 +220,174 @@
 
 .detail-value {
     color: var(--text-muted);
+}}
+
+.modal-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 0;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.detail-row {
+    display: flex;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    font-weight: 600;
+    width: 180px;
+    flex-shrink: 0;
+}
+
+.detail-value {
+    color: var(--text-muted);
+}
+
+.reservation-modal {
+    max-width: 600px;
+}
+
+.reservation-equipement-info {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%);
+    padding: 1rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid var(--primary);
+}
+
+.reservation-equipement-info h3 {
+    margin: 0 0 0.5rem 0;
+    color: var(--primary);
+    font-size: 1.1rem;
+}
+
+.reservation-equipement-info p {
+    margin: 0.25rem 0;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.creneau-selector {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 0.75rem;
+}
+
+.creneau-card {
+    background: var(--bg-white);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.25rem 0.75rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.creneau-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.creneau-card:hover::before {
+    left: 100%;
+}
+
+.creneau-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2);
+}
+
+.creneau-card.selected {
+    border-color: var(--primary);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.05) 100%);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.creneau-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.creneau-label {
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+}
+
+.creneau-time {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.confirmation-modal {
+    max-width: 450px;
+}
+
+.success-animation {
+    margin: 0 auto 1.5rem auto;
+    width: 80px;
+    height: 80px;
+}
+
+.checkmark {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--success);
+    color: white;
+    font-size: 3rem;
+    animation: scaleIn 0.5s ease-out;
+    box-shadow: 0 4px 20px rgba(34, 197, 94, 0.4);
+}
+
+@keyframes scaleIn {
+    0% {
+        transform: scale(0) rotate(-180deg);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2) rotate(0deg);
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+.reservation-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 0.5rem;
 }
 </style>
 
@@ -724,7 +961,15 @@ async function openEquipementModal(equipementId) {
     }
     
     modalBody.innerHTML = `
-        ${contactHtml}
+    ${contactHtml}
+    
+    <button onclick="openReservationModal(allLoadedEquipements.find(e => (e.equip_numero || e.equip_id) === '${equipementId}'))" 
+            class="btn btn-primary btn-block btn-lg" 
+            style="margin-bottom: 1.5rem; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); border: none;">
+        📅 Réserver cet équipement
+    </button>
+    
+    <div>
         <div>
             <div class="detail-row">
                 <div class="detail-label">Numéro d'équipement</div>
@@ -788,6 +1033,89 @@ document.addEventListener('click', function(e) {
         document.body.style.overflow = '';
     }
 });
+
+let currentEquipementForReservation = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    const dateInput = document.getElementById('reservation-date');
+    if (dateInput) {
+        dateInput.setAttribute('min', today);
+    }
+});
+
+function openReservationModal(equipement) {
+    currentEquipementForReservation = equipement;
+    
+    const modal = document.getElementById('reservation-modal');
+    const infoDiv = document.getElementById('reservation-equipement-info');
+    
+    infoDiv.innerHTML = `
+        <h3>${equipement.inst_nom || equipement.equip_nom || 'Sans nom'}</h3>
+        <p><strong>Type :</strong> ${equipement.equip_type_name || '-'}</p>
+        <p><strong>Ville :</strong> ${equipement.arr_name || equipement.new_name || '-'}</p>
+    `;
+    
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeReservationModal() {
+    const modal = document.getElementById('reservation-modal');
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+    
+    document.getElementById('reservation-form').reset();
+    document.querySelectorAll('.creneau-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+}
+
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.creneau-card')) {
+        const card = e.target.closest('.creneau-card');
+        
+        document.querySelectorAll('.creneau-card').forEach(c => {
+            c.classList.remove('selected');
+        });
+        
+        card.classList.add('selected');
+        document.getElementById('reservation-creneau').value = card.dataset.creneau;
+    }
+});
+
+document.getElementById('reservation-form')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const creneau = document.getElementById('reservation-creneau').value;
+    if (!creneau) {
+        alert('Veuillez sélectionner un créneau horaire');
+        return;
+    }
+    
+    const reservation = {
+        equipement: currentEquipementForReservation,
+        date: document.getElementById('reservation-date').value,
+        creneau: creneau,
+        personnes: document.getElementById('reservation-personnes').value,
+        commentaire: document.getElementById('reservation-commentaire').value,
+        timestamp: new Date().toISOString()
+    };
+    
+    let reservations = JSON.parse(localStorage.getItem('reservations') || '[]');
+    reservations.push(reservation);
+    localStorage.setItem('reservations', JSON.stringify(reservations));
+    
+    closeReservationModal();
+    
+    document.getElementById('confirmation-modal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+});
+
+function closeConfirmationModal() {
+    document.getElementById('confirmation-modal').classList.remove('active');
+    document.body.style.overflow = '';
+}
 
 function escapeHtml(text) {
     if (!text) return '';
