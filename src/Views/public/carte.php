@@ -308,6 +308,45 @@ function initMap() {
     });
 
     map.addLayer(markerClusterGroup);
+    
+    if (navigator.geolocation) {
+        document.getElementById('loading-overlay').style.display = 'flex';
+        navigator.geolocation.getCurrentPosition(async function(position) {
+            const userLat = position.coords.latitude;
+            const userLon = position.coords.longitude;
+            
+            const blueIcon = L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            });
+            
+            const userMarker = L.marker([userLat, userLon], { icon: blueIcon }).addTo(map);
+            map.setView([userLat, userLon], 13);
+            
+            try {
+                const response = await fetch(`https://api-adresse.data.gouv.fr/reverse/?lon=${userLon}&lat=${userLat}`);
+                const data = await response.json();
+                if (data.features && data.features.length > 0) {
+                    const commune = data.features[0].properties.city;
+                    document.getElementById('filter-commune').value = commune;
+                    communeCoords = { lat: userLat, lon: userLon };
+                    document.getElementById('filter-rayon').value = 5;
+                    document.getElementById('rayon-value').textContent = '5 km';
+                    document.getElementById('rayon-container').style.display = 'block';
+                    loadEquipements();
+                }
+            } catch (error) {
+                console.error('Erreur géocodage inverse:', error);
+            }
+            
+        }, function(error) {
+            console.log('Géolocalisation refusée ou indisponible:', error);
+        });
+    }
 }
 
 async function loadEquipements() {
